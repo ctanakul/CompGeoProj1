@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/chainatee/Fall quarter/comp_geo/proj1/bresenham.cpp
+opencv2/core/core.hpp
+-
+opencv2/highgui/highgui.hpp
+-
+iostream
+-
+stdlib.h
+-
+fstream
+-
+string
+-
+sstream
+-
+
