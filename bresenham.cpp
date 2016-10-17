@@ -355,7 +355,7 @@ void line_draw_brasenham(Mat &mat,int two_points[][2]){
 
 //3-------------------------------------points input from file operation----------------------------------------------------------
 
-//input points from text in 'P' case
+//3.1input points from text in 'P' case
 void input_point_from_text(int input[][2],string filename, int size){
   
   string item;     
@@ -386,7 +386,7 @@ void input_point_from_text(int input[][2],string filename, int size){
 
 //4-------------------------------------draw polygon from points----------------------------------------------------------
 
-//draw polygon from points
+//4.1draw polygon from points
 void draw_polygon_line (Mat &image, int mat_points[][2], int mat_size){
 
   int two_dot_array[2][2];
@@ -401,12 +401,12 @@ void draw_polygon_line (Mat &image, int mat_points[][2], int mat_size){
     two_dot_array[1][0] = mat_points[j][0];
     two_dot_array[1][1] = mat_points[j][1];
     
-    cout << "i : " << i << " j : " << j << endl;
-    cout << "twodot_x0 : " << two_dot_array[0][0] << endl;
-    cout << "twodot_y0 : " << two_dot_array[0][1] << endl;
-    cout << "twodot_x1 : " << two_dot_array[1][0] << endl;
-    cout << "twodot_y1 : " << two_dot_array[1][1] << endl;
-    cout << "sizeof = " << sizeof(two_dot_array)/(2*sizeof(two_dot_array[0][0])) << endl;
+    // cout << "i : " << i << " j : " << j << endl;
+    // cout << "twodot_x0 : " << two_dot_array[0][0] << endl;
+    // cout << "twodot_y0 : " << two_dot_array[0][1] << endl;
+    // cout << "twodot_x1 : " << two_dot_array[1][0] << endl;
+    // cout << "twodot_y1 : " << two_dot_array[1][1] << endl;
+    // cout << "sizeof = " << sizeof(two_dot_array)/(2*sizeof(two_dot_array[0][0])) << endl;
 
     // draw a line between 2 points
     line_draw_brasenham(image,two_dot_array);    
@@ -414,18 +414,115 @@ void draw_polygon_line (Mat &image, int mat_points[][2], int mat_size){
 
 }
 
+//5--------------------------------------color the polygon---------------------------------------------------------------
+
+
+//5.1 --------------return rightmost and leftmost x and y coordinate of a polygon line-------
+///5.1.1 Build structure containing limitpoints
+struct Limitpoints{
+  int least_x;
+  int least_y;
+  int most_x;
+  int most_y;
+};
+
+///5.1.2 Function for return Limitpoints
+Limitpoints get_limitpoints_polygon(int points[][2], int size_point_array){
+
+  cout << "size = " << size_point_array << endl;
+  int size = size_point_array;
+  Limitpoints limits;
+
+  //find leftmost_x
+  for (int x = 0; x < size; x++){
+    cout << "point = " << points[x][0] << endl;
+    cout << "x++ = " << x << endl;
+    if ((points[x][0] < limits.least_x) || (x == 0)){
+      cout << "Inside point = " << points[x][0] << endl;
+      cout << "x++ = " << x << endl;
+      limits.least_x = points[x][0];
+    }  
+  }
+  //find rightmost_x
+  for (int x = 0; x < size; x++){
+    if ((points[x][0] > limits.most_x) || (x == 0)){
+      limits.most_x = points[x][0];
+    }  
+  }
+  //find topmost_y
+  for (int y = 0; y < size; y++){
+    if ((points[y][1] < limits.least_y) || (y == 0)){
+      limits.least_y = points[y][1];
+    }  
+  }
+  //find bottommost_y
+  for (int y = 0; y < size; y++){
+    if ((points[y][1] > limits.most_y) || (y == 0)){
+      limits.most_y = points[y][1];
+    }  
+  }
+  return limits; 
+}
+
+
+//5.2 color polygon in limits
+void color_polygon_in_limits(Mat &polygon_unfilled, Limitpoints limits){
+  //make the horizontal sweepline(y-axis)
+  int fill = 0;
+  cout << "test   " << polygon_unfilled.at<Vec3b>(limits.least_y,limits.least_x - 1) << endl;
+  cout << "test   " << polygon_unfilled.at<Vec3b>(345,100) << endl;
+  cout << "test   " << polygon_unfilled.at<Vec3b>(740,350) << endl;
+  cout << "test   " << polygon_unfilled.at<Vec3b>(344,99) << endl;
+  cout << "test   " << polygon_unfilled.at<Vec3b>(739,349) << endl;
+  cout << "test   " << polygon_unfilled.at<Vec3b>(738,348) << endl;
+  cout << "test   " << polygon_unfilled.at<Vec3b>(741,351) << endl;
+
+
+
+  for(int y = limits.least_y; y < limits.most_y ; y++){
+    //make the vertical sweepline for each step of horizontal sweepline(x-axis with each x-axis)
+    for(int x = limits.least_x; x < limits.most_x ; x++){
+      //if the pixel before is black and now is white, fill = 1, and fill that pixel
+      if((polygon_unfilled.at<Vec3b>(y, x - 1) == Vec3b(0,0,0)) && (fill == 0)){
+  	fill = 1;
+      }
+      else if((polygon_unfilled.at<Vec3b>(y,x) == Vec3b(0,0,0)) && (fill == 1)){
+	break;
+      }
+      if(fill == 1){
+  	polygon_unfilled.at<Vec3b>(y, x) = Vec3b(0,0,200);
+      }      
+    }
+    fill = 0;
+  }
+}
+
+
+
+//5.----------------Color the polygon process---------------------------------
+void color_polygon(Mat &polygon_line, int points[][2], int size_points_array){
+  //return leftmost and rightmost x and y
+  Limitpoints limits = get_limitpoints_polygon(points,size_points_array);
+  color_polygon_in_limits(polygon_line,limits);
+}
+
+
+
+
+
+
 
 
 ////////--------------------------------------------------------------------------Main-----------------------------------------------------------------------//////////
 
 
 int main(){
-  Mat image(500, 500, CV_8UC3); //B,G,R
+  Mat image(1000, 1000, CV_8UC3); //B,G,R
   color_whole_pict(image,255,255,255); //color whole pict to be white
   
   //input from file
   ifstream inFile;
-  inFile.open("points.txt");
+  inFile.open("Input1.txt");
   //Check for error
   if (inFile.fail()){
     cerr << "Error Opening File" << endl;
@@ -442,12 +539,14 @@ int main(){
   int input[count - 2][2];
   const int size_input = sizeof(input)/(2*sizeof(input[0][0]));
   //get input points
-  input_point_from_text(input,"points.txt", size_input);
+  input_point_from_text(input,"Input1.txt", size_input);
 
 
   //draw polygon by connecting points
   draw_polygon_line(image,input, size_input);
   
+  //color the polygon
+  color_polygon(image,input,size_input);
 
 
   namedWindow("figure", WINDOW_AUTOSIZE);
