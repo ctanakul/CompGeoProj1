@@ -483,7 +483,7 @@ Limitpoints get_limitpoints_polygon(int points[][2], int size_point_array){
 
 
 //5.2 color polygon in limits
-void color_polygon_in_limits(Mat &polygon_unfilled, Limitpoints limits){
+void color_scan_line_polygon_in_limits(Mat &polygon_unfilled, Limitpoints limits){
   //make the horizontal sweepline(y-axis)
   int fill = 0;
 
@@ -505,13 +505,35 @@ void color_polygon_in_limits(Mat &polygon_unfilled, Limitpoints limits){
   }
 }
 
+void floodfill(Mat &polygon_unfilled, Limitpoints limits, int x, int y, int B, int G, int R){
+  if(polygon_unfilled.at<Vec3b>(y, x) == Vec3b(255,255,255) && (x < limits.most_x) && (x > limits.least_x) && (y < limits.most_y) && (y > limits.least_y)){
+    cout << "x and y  :  " << x << " , " << y << endl;
+    polygon_unfilled.at<Vec3b>(y, x) = Vec3b(B,G,R);
+    floodfill(polygon_unfilled, limits, x, y+1, B, G, R);
+    floodfill(polygon_unfilled, limits, x, y-1, B, G, R);
+    floodfill(polygon_unfilled, limits, x+1, y, B, G, R);
+    floodfill(polygon_unfilled, limits, x-1, y, B, G, R);
+  }
+  // else if(polygon_unfilled.at<Vec3b>(y, x) == Vec3b(0,0,0)){
+  return;
+  // }  
+}
+
+//5.3 color polygon with flood-fill 
+void color_flood_fill_polygon_in_limits(Mat &polygon_unfilled, Limitpoints limits){
+  //choose mid x and y point
+  int mid_x = (limits.least_x + limits.most_x)/2;
+  int mid_y = (limits.least_y + limits.most_y)/2;
+  floodfill(polygon_unfilled, limits, mid_x, mid_y, 0, 0, 255);
+}
 
 
 //5.3----------------Color the polygon process---------------------------------
 void color_polygon(Mat &polygon_line, int points[][2], int size_points_array){
   //return leftmost and rightmost x and y
   Limitpoints limits = get_limitpoints_polygon(points,size_points_array);
-  color_polygon_in_limits(polygon_line,limits);
+  // color_scan_line_polygon_in_limits(polygon_line,limits);
+  color_flood_fill_polygon_in_limits(polygon_line,limits);
 }
 
 
@@ -803,7 +825,6 @@ void two_polygons_operation(string filename, string operation_type){
       draw_color_polygon_from_im_to_im(image, polygon_2, input_2, size_input2, polygons_info.bgr_polygon1.b, polygons_info.bgr_polygon2.g, polygons_info.bgr_polygon2.r, "i");
     }
 
-
     if(front == 1 && operation_type == "u"){
       draw_color_polygon_from_im_to_im(image, polygon_2, input_2, size_input2, 0, 0, 255, "u");
       draw_color_polygon_from_im_to_im(image, polygon_1, input_1, size_input1, 0, 0, 255, "u");
@@ -825,7 +846,11 @@ void two_polygons_operation(string filename, string operation_type){
 
 int main(){
 
-  string filename = "Input-2.txt";
+
+  //////////////////////test/////////////////////////////////////
+
+  string filename = "input_3_small_test.txt";
+  // string filename = "input2_2.txt"; 
 
   //return the head of the file, "T" or "P"
   string first_line = get_first_line(filename);
@@ -872,9 +897,11 @@ int main(){
 
   }//Closed bracket for P function
   else if(first_line == "T"){
-
     two_polygons_operation(filename, "u");
   }
+
+
+
   waitKey(0);
   return 0;
 }
