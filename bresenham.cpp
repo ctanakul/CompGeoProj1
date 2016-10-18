@@ -717,13 +717,13 @@ void color_union_scan_line_im_to_im(Mat &image, Mat &back_image, int mat_point[]
       }
       if(fill == 1 and y != limits.least_y){
         image.at<Vec3b>(y, x) = Vec3b(B,G,R);
-	if(back_image.at<Vec3b>(y,x + 1) != Vec3b(255,255,255)){
+	if(image.at<Vec3b>(y,x + 1) == Vec3b(0,0,0) && image.at<Vec3b>(y ,x + 2) != Vec3b(255,255,255)){
 	  image.at<Vec3b>(y, x + 1) = Vec3b(B,G,R);
 	}
-	if(back_image.at<Vec3b>(y-1,x) == Vec3b(0,0,0) || back_image.at<Vec3b>(y -2,x) != Vec3b(255,255,255)){
+	if(image.at<Vec3b>(y-1,x) == Vec3b(0,0,0) && image.at<Vec3b>(y -2,x) != Vec3b(255,255,255)){
 	  image.at<Vec3b>(y-1,x) = Vec3b(B,G,R);
 	}      
-	if(back_image.at<Vec3b>(y+1,x) == Vec3b(0,0,0) || back_image.at<Vec3b>(y +2,x) != Vec3b(255,255,255)){
+	if(image.at<Vec3b>(y+1,x) == Vec3b(0,0,0) && image.at<Vec3b>(y +2,x) != Vec3b(255,255,255)){
 	  image.at<Vec3b>(y+1,x) = Vec3b(B,G,R);
 	}      
       }
@@ -802,6 +802,7 @@ void two_polygons_operation(string filename, string operation_type){
       draw_color_polygon_from_im_to_im(image, polygon_1, input_1, size_input1, polygons_info.bgr_polygon1.b, polygons_info.bgr_polygon1.g, polygons_info.bgr_polygon1.r, "i");
       draw_color_polygon_from_im_to_im(image, polygon_2, input_2, size_input2, polygons_info.bgr_polygon1.b, polygons_info.bgr_polygon2.g, polygons_info.bgr_polygon2.r, "i");
     }
+
 
     if(front == 1 && operation_type == "u"){
       draw_color_polygon_from_im_to_im(image, polygon_2, input_2, size_input2, 0, 0, 255, "u");
