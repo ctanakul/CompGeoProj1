@@ -446,17 +446,17 @@ struct Limitpoints{
 ///5.1.2 Function for return Limitpoints
 Limitpoints get_limitpoints_polygon(int points[][2], int size_point_array){
 
-  cout << "size = " << size_point_array << endl;
+  // cout << "size = " << size_point_array << endl;
   int size = size_point_array;
   Limitpoints limits;
 
   //find leftmost_x
   for (int x = 0; x < size; x++){
-    cout << "point = " << points[x][0] << endl;
-    cout << "x++ = " << x << endl;
+    // cout << "point = " << points[x][0] << endl;
+    // cout << "x++ = " << x << endl;
     if ((points[x][0] < limits.least_x) || (x == 0)){
-      cout << "Inside point = " << points[x][0] << endl;
-      cout << "x++ = " << x << endl;
+      // cout << "Inside point = " << points[x][0] << endl;
+      // cout << "x++ = " << x << endl;
       limits.least_x = points[x][0];
     }  
   }
@@ -507,7 +507,7 @@ void color_scan_line_polygon_in_limits(Mat &polygon_unfilled, Limitpoints limits
 
 void floodfill(Mat &polygon_unfilled, Limitpoints limits, int x, int y, int B, int G, int R){
   if(polygon_unfilled.at<Vec3b>(y, x) == Vec3b(255,255,255) && (x < limits.most_x) && (x > limits.least_x) && (y < limits.most_y) && (y > limits.least_y)){
-    cout << "x and y  :  " << x << " , " << y << endl;
+    // cout << "x and y  :  " << x << " , " << y << endl;
     polygon_unfilled.at<Vec3b>(y, x) = Vec3b(B,G,R);
     floodfill(polygon_unfilled, limits, x, y+1, B, G, R);
     floodfill(polygon_unfilled, limits, x, y-1, B, G, R);
@@ -527,13 +527,38 @@ void color_flood_fill_polygon_in_limits(Mat &polygon_unfilled, Limitpoints limit
   floodfill(polygon_unfilled, limits, mid_x, mid_y, 0, 0, 255);
 }
 
+//5.4---------------Message for coloring preference---------------------------
+string color_type_display(void){
+  cout << "\n\n\n\n### Please type preferred colouring method\n";
+  cout << "### ff : flood-fill algorithm\n";
+  cout << "### sl : scan-line algorithm\n";
+  cout << "!!!!WARNING for flood-fill please make sure the stack is allowable to be up to 32000, otherwise, segmentationfault is displayed\n";
+  string color_type;
+  cin >> color_type;
+  return color_type;
+}
+
+
 
 //5.3----------------Color the polygon process---------------------------------
 void color_polygon(Mat &polygon_line, int points[][2], int size_points_array){
+
+  string color_type = color_type_display();
+
   //return leftmost and rightmost x and y
   Limitpoints limits = get_limitpoints_polygon(points,size_points_array);
-  // color_scan_line_polygon_in_limits(polygon_line,limits);
-  color_flood_fill_polygon_in_limits(polygon_line,limits);
+
+  if(color_type == "sl"){
+    // cout << "No!!!!\n";
+    color_scan_line_polygon_in_limits(polygon_line,limits);
+  }
+  else if(color_type == "ff"){
+    color_flood_fill_polygon_in_limits(polygon_line,limits);
+  }
+  else{
+    cout << "### Wrong command, please go over again\n\n\n";
+    return;
+  }
 }
 
 
@@ -693,7 +718,7 @@ void input_point_from_text_2polygons(int input_1[][2],int size_input1,int input_
 }
 
 
-//6.3------------------
+
 
 
 
@@ -755,6 +780,56 @@ void color_union_scan_line_im_to_im(Mat &image, Mat &back_image, int mat_point[]
 }
 
 
+
+
+void floodfill_im_to_im(Mat &image, Mat &back_image, Limitpoints limits, int x, int y, int B, int G, int R, string operation_type){
+
+  if(back_image.at<Vec3b>(y, x) == Vec3b(255,255,255) && (x < limits.most_x) && (x > limits.least_x) && (y < limits.most_y) && (y > limits.least_y)){
+    // cout << "x and y  :  " << x << " , " << y << endl;
+    back_image.at<Vec3b>(y,x) = Vec3b(B,G,R);
+    image.at<Vec3b>(y, x) = Vec3b(B,G,R);
+      
+    floodfill_im_to_im(image, back_image, limits, x, y+1, B, G, R, operation_type);
+    floodfill_im_to_im(image, back_image, limits, x, y-1, B, G, R, operation_type);
+    floodfill_im_to_im(image, back_image, limits, x+1, y, B, G, R, operation_type);
+    floodfill_im_to_im(image, back_image, limits, x-1, y, B, G, R, operation_type);
+  }
+
+  if(operation_type == "u"){
+    if(back_image.at<Vec3b>(y,x + 1) == Vec3b(0,0,0) && image.at<Vec3b>(y ,x + 2) != Vec3b(255,255,255)){
+      image.at<Vec3b>(y, x + 1) = Vec3b(B,G,R);
+    }
+    if(back_image.at<Vec3b>(y-1,x) == Vec3b(0,0,0) && image.at<Vec3b>(y -2,x) != Vec3b(255,255,255)){
+      image.at<Vec3b>(y-1,x) = Vec3b(B,G,R);
+    }      
+    if(back_image.at<Vec3b>(y+1,x) == Vec3b(0,0,0) && image.at<Vec3b>(y +2,x) != Vec3b(255,255,255)){
+      image.at<Vec3b>(y+1,x) = Vec3b(B,G,R);
+    }    
+    if(back_image.at<Vec3b>(y,x-1) == Vec3b(0,0,0) && image.at<Vec3b>(y ,x-2) != Vec3b(255,255,255)){
+      image.at<Vec3b>(y,x-1) = Vec3b(B,G,R);
+    }    
+  }
+
+
+  return;
+}
+
+
+//6.4-----------------------color a polygon (flood-fill) from image to image--------
+void color_flood_fill_im_to_im(Mat &image, Mat &back_image, int mat_point[][2],int size_input, int B, int G, int R, string operation_type){
+  //return leftmost and rightmost x and y
+  Limitpoints limits = get_limitpoints_polygon(mat_point, size_input);
+  int fill = 0;
+  
+
+  int mid_x = (limits.least_x + limits.most_x)/2;
+  int mid_y = (limits.least_y + limits.most_y)/2;
+  floodfill_im_to_im(image, back_image, limits, mid_x, mid_y, B, G, R,operation_type);
+ 
+}
+
+
+
 //6.4-----------------------draw and color a polygon--------------------------------
 void draw_color_polygon_from_im_to_im(Mat &image,Mat &back_image, int mat_point[][2], int mat_size, int B, int G, int R, string operation_type){
 
@@ -762,15 +837,33 @@ void draw_color_polygon_from_im_to_im(Mat &image,Mat &back_image, int mat_point[
   draw_polygon_line(image, mat_point, mat_size);
   draw_polygon_line(back_image, mat_point, mat_size);
 
+  //ask for coloring method
+  string color_type = color_type_display();
+  
   //color the real image according to the polygon image
-  if(operation_type == "i"){
-  color_scan_line_im_to_im(image, back_image, mat_point, mat_size, B, G, R);
+  if(color_type == "sl"){
+    if(operation_type == "i"){
+      color_scan_line_im_to_im(image, back_image, mat_point, mat_size, B, G, R);
+    }
+    else if(operation_type == "u"){
+      color_union_scan_line_im_to_im(image, back_image, mat_point, mat_size, 0, 0, 255);
+    }
   }
-  else if(operation_type == "u"){
-    color_union_scan_line_im_to_im(image, back_image, mat_point, mat_size, 0, 0, 255);
+  else if(color_type == "ff"){
+    cout << "2 times here!!!";
+    if(operation_type == "i"){
+      color_flood_fill_im_to_im(image, back_image, mat_point, mat_size, B, G, R,"i"); /////////////////////////////error hereeeeee!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+      cout << "Must show 2 times";
+    }
+    else if(operation_type == "u"){
+      color_flood_fill_im_to_im(image, back_image, mat_point, mat_size, 0, 0, 255,"u");
+    }
+  }
+  else{
+    cout << "Suspect wrong command";
   }
 }
-  
+
 //6.----------------Union and intersect operation-------------------------------------------
 
 void two_polygons_operation(string filename, string operation_type){
@@ -814,17 +907,18 @@ void two_polygons_operation(string filename, string operation_type){
     if (limits1.least_x < limits2.least_x){front = 1;}
     else {front = 2;}
     
-    //color with scan line according to each own image with the sequence of rear then front
 
+    //color with scan line according to each own image with the sequence of rear then front
     if(front == 1 && operation_type == "i"){
       draw_color_polygon_from_im_to_im(image, polygon_2, input_2, size_input2, polygons_info.bgr_polygon1.b, polygons_info.bgr_polygon2.g, polygons_info.bgr_polygon2.r, "i");
       draw_color_polygon_from_im_to_im(image, polygon_1, input_1, size_input1, polygons_info.bgr_polygon1.b, polygons_info.bgr_polygon1.g, polygons_info.bgr_polygon1.r, "i");
+      cout << "Hey!!!";
     }
     else if(front == 2 && operation_type == "i"){
       draw_color_polygon_from_im_to_im(image, polygon_1, input_1, size_input1, polygons_info.bgr_polygon1.b, polygons_info.bgr_polygon1.g, polygons_info.bgr_polygon1.r, "i");
       draw_color_polygon_from_im_to_im(image, polygon_2, input_2, size_input2, polygons_info.bgr_polygon1.b, polygons_info.bgr_polygon2.g, polygons_info.bgr_polygon2.r, "i");
     }
-
+    
     if(front == 1 && operation_type == "u"){
       draw_color_polygon_from_im_to_im(image, polygon_2, input_2, size_input2, 0, 0, 255, "u");
       draw_color_polygon_from_im_to_im(image, polygon_1, input_1, size_input1, 0, 0, 255, "u");
@@ -833,7 +927,7 @@ void two_polygons_operation(string filename, string operation_type){
       draw_color_polygon_from_im_to_im(image, polygon_1, input_1, size_input1, 0, 0, 255, "u");
       draw_color_polygon_from_im_to_im(image, polygon_2, input_2, size_input2, 0, 0, 255, "u");
     }
-
+   
     //imshow
     namedWindow("figure", WINDOW_AUTOSIZE);
     imshow("figure",image);
@@ -844,13 +938,22 @@ void two_polygons_operation(string filename, string operation_type){
 ////////--------------------------------------------------------------------------Main-----------------------------------------------------------------------//////////
 
 
-int main(){
+int main(int argc, char *argv[]){
 
+
+  if(argc != 2){
+    cout << "#### Welcome to project 1 of computational geometry" << endl;
+    cout << "#### My name is Chainatee Tanakulrungson 2993338" << endl;
+    cout << "#### To use the program please type the command line follow by filename" << endl;
+    cout << "#### !!!Please make sure the first line begins with P or T" << endl;
+     
+    cout << "#### usage : $ " << argv[0] << " <filename>\n";
+    cout << "#### Example : usage : $ " << argv[0] << " Input1.txt\n";
+  }
+  else {
+    string filename = argv[1]; 
 
   //////////////////////test/////////////////////////////////////
-
-  string filename = "input_3_small_test.txt";
-  // string filename = "input2_2.txt"; 
 
   //return the head of the file, "T" or "P"
   string first_line = get_first_line(filename);
@@ -897,13 +1000,27 @@ int main(){
 
   }//Closed bracket for P function
   else if(first_line == "T"){
-    two_polygons_operation(filename, "u");
+    cout << "### Suspect two polygons\n";
+    cout << "### Please type preferred operation\n";
+    cout << "### u : union\n";
+    cout << "### ca : coverage-aware\n";
+    string operation_type;
+    cin >> operation_type;
+    if(operation_type == "u"){
+      two_polygons_operation(filename, "u");
+    }
+    else if(operation_type == "ca"){
+      two_polygons_operation(filename, "i");
+    }
+    else{
+      cout << "### Suspect wrong command, please start over";
+    }
   }
-
 
 
   waitKey(0);
   return 0;
+  }
 }
 
 
