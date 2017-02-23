@@ -1,5 +1,3 @@
-#Yall Nate!!
-
 To run the program
 
     $ ./Brasenham
@@ -27,8 +25,3 @@ Input-2.txt ----- Draw two polygons and color each of them according to the RGB 
 It has 2 operations according to what we type in two_polygons_operation(filename, "u"); in Main()
 If the second input string is "u", they will be union and clor both of them red.
 If the second input string is "i", they will be color to show which is front and rear according to x-coordinate
-
-MAny of functions i did it on the fly, so they are still messy.
-
-
-Don't worry, if you don't have time though. This is just for fun. 
